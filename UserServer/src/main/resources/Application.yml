@@ -1,0 +1,30 @@
+server:
+  port: 7379
+spring:
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://hadoop103:3306/oid?characterEncoding=utf-8&useSSL=false
+    username: root
+    password: '000000'
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  main:
+    allow-bean-definition-overriding: true
+
+mybatis-plus:
+  mapper-locations: mapper/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+xr-swagger:
+  swagger:
+    enabled: true
+    swagger-version: Swagger3
+    base-package: com
+    key-name: token
+    group-name: OID应用平台
+  xr:
+    version: 1.0.0
+    email: ""
+    copyright-year: 2024
+    author: fyc
