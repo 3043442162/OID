@@ -11,6 +11,8 @@ import javax.validation.constraints.NotNull;
 @ApiModel("注册OID")
 public class OIDVo {
 
+    Integer id;
+
     @NotNull
     @ApiModelProperty(value = "OID的具体数字")
     Integer oid;
