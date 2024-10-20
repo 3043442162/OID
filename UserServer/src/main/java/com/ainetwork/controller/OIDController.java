@@ -1,32 +1,35 @@
 package com.ainetwork.controller;
 
+import cn.dev33.satoken.stp.StpUtil;
+import com.ainetwork.config.StpInterfaceImpl;
 import com.ainetwork.entity.OID;
 import com.ainetwork.entity.OIDRelation;
-import com.ainetwork.entity.UserOID;
-import com.ainetwork.service.OIDRelationService;
-import com.ainetwork.service.OIDService;
-import com.ainetwork.service.UserOIDService;
+import com.ainetwork.entity.OIDXml;
+import com.ainetwork.enums.PermissionEnum;
+import com.ainetwork.enums.RoleEnum;
+import com.ainetwork.service.*;
 import com.ainetwork.util.Result;
 import com.ainetwork.vo.OIDVo;
 import com.ainetwork.vo.TreeVo;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiOperation;
-import org.ietf.jgss.Oid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import sun.rmi.runtime.Log;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Transactional
 @RestController
 @RequestMapping("/OID")
 @Api(tags = "OID管理模块")
@@ -36,17 +39,29 @@ public class OIDController {
     @Autowired
     private OIDService oidService;
 
+
+    @Autowired
+    private OIDXmlService oidXmlService;
+
     @Autowired
     private OIDRelationService oidRelationService;
 
+//    @Autowired
+//    private OIDUserService oidUserService;
+
     @Autowired
-    private UserOIDService userOIDService;
+    private UserOIDRoleService userOIDRoleService;
+    @Autowired
+    private StpInterfaceImpl stpInterface;
+
     /**
      * oid信息查询
      */
     @ApiOperation("/根据id查询oid信息")
     @GetMapping
-    public Result<?> queryOID(Long id){
+    public Result<?> queryOID(int id){
+        stpInterface.setNodeId(id);
+        StpUtil.checkPermission(PermissionEnum.QUERY_NODE.getDesc());
         OID byId = oidService.getById(id);
         return byId== null ? Result.error("您查询的oid不存在"):Result.ok(byId);
     }
@@ -57,6 +72,8 @@ public class OIDController {
     @ApiOperation("在父节点下注册子节点oid")
     @PostMapping("/register")
     public Result<?> register(@Validated  @RequestBody OID oid, Integer fatherId){
+        stpInterface.setNodeId(fatherId);
+        StpUtil.checkPermission(PermissionEnum.UPDATE_NODE.getDesc());
         OID byId = oidService.getById(fatherId);
         if (!Optional.ofNullable(byId).isPresent()) return Result.error("父节点不存在");
 
@@ -75,6 +92,8 @@ public class OIDController {
 
         oidRelation.setSonId(oid.getId());
         boolean save = oidRelationService.save(oidRelation);
+        Integer loginId = StpUtil.getLoginIdAsInt();
+        userOIDRoleService.saveUserOidRole(loginId, oid.getId(), RoleEnum.OTHER.getRoleId());
         return save ? Result.ok(oid.getId()):Result.error("保存oid及其父节点失败");
     }
 
@@ -84,6 +103,8 @@ public class OIDController {
     @ApiOperation("根据id删除oid")
     @DeleteMapping
     public Result<?> deleteOID(Integer id){
+        stpInterface.setNodeId(id);
+        StpUtil.checkPermission(PermissionEnum.DELETE_NODE.getDesc());
         OID byId = oidService.getById(id);
         if (byId == null) return Result.error("该oid不存在");
 
@@ -124,7 +145,8 @@ public class OIDController {
         OID byId = oidService.getById(id);
         TreeVo treeVo = new TreeVo();
         treeVo.setId(byId.getId());
-        treeVo.setLabel(byId.getDescribe()+byId.getIpAddress());
+        OIDXml oidXml = oidXmlService.getById(byId.getOidXml());
+        treeVo.setLabel(byId.getDescribe()+(oidXml == null ? null:oidXml.getXmlUrl()));
         List<OIDRelation> records = pageInfo.getRecords();
         List<TreeVo> treeVos = records.stream().map(
                 line -> {
@@ -177,7 +199,9 @@ public class OIDController {
                     oidVo.setId(byId.getId());
                     oidVo.setOid(byId.getOid());
                     oidVo.setDescribe(byId.getDescribe());
-                    oidVo.setIpAddress(byId.getIpAddress());
+
+                    OIDXml byId1 = oidXmlService.getById(byId.getOidXml());
+                    oidVo.setIpAddress(byId1.getXmlUrl());
                     return oidVo;
                 }
         ).collect(Collectors.toList());
@@ -238,6 +262,8 @@ public class OIDController {
     @ApiOperation("OID修改功能")
     @PostMapping("/update")
     public Result<?> updateOID(@RequestBody OID oid){
+        stpInterface.setNodeId(oid.getId());
+        StpUtil.checkPermission(PermissionEnum.UPDATE_NODE.getDesc());
         if(!Optional.ofNullable(oid.getId()).isPresent()){
             return Result.error("id不能为null");
         }
@@ -278,7 +304,7 @@ public class OIDController {
     }
 
     @ApiOperation("查找当前节点的父节点")
-    @GetMapping("/queryFahterOID")
+    @GetMapping("/queryFatherOID")
     public Result<?> getFatherOID(Integer id){
         Integer fatherId = oidRelationService.queryFatherOID(id);
         OID oid = oidService.getById(fatherId);
@@ -297,5 +323,52 @@ public class OIDController {
             max = max > sonOID.getOid()?max:sonOID.getOid();
         }
         return Result.ok(max);
+    }
+
+    @ApiOperation("下载当前oid对应的xml文件")
+    @GetMapping("/getXml")
+    public void downLoadXmlFile(Integer id, HttpServletResponse response)  {
+        OID byId = oidService.getById(id);
+        @NotNull Integer oidXml = byId.getOidXml();
+        File file = oidXmlService.queryXmlFromId(oidXml);
+        response.setContentType("application/x-download");
+        response.setHeader("Content-Disposition", "attachment;filename=" + file.getName());
+
+        ServletOutputStream out = null;
+        InputStream stream = null;
+        try{
+            out = response.getOutputStream();
+            stream = new FileInputStream(file);//读取服务器上的文件
+                byte buff[] = new byte[1024];
+                int length = stream.read(buff);
+                while(length > 0) {
+                    out.write(buff,0,length);
+                    length = stream.read(buff);
+                }
+            } catch (IOException  e) {
+                e.printStackTrace();
+            }finally {
+            if(stream != null){
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (out != null){
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (out != null ){
+                try {
+                    out.flush();
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }

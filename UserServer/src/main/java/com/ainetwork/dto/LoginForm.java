@@ -11,10 +11,10 @@ import javax.validation.constraints.Positive;
 @ApiModel(value = "登录表单")
 public class LoginForm {
 
-    @Positive
+//    @Positive
     @NotNull
     @ApiModelProperty(value = "账号，具有唯一性")
-    private Integer account;
+    private Long account;
 
 //    @Email(message = "邮箱格式错误")
 //    @ApiModelProperty(value = "邮箱")

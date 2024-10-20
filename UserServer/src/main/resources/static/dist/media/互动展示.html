@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>互动页面</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            flex-direction: column; /* 垂直排列子元素 */
+        }
+        .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 80%;
+            max-width: 800px;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .agent {
+            border: 1px solid #ccc;
+            padding: 10px; /* 缩小内边距 */
+            width: 200px; /* 缩小宽度 */
+            text-align: center;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            position: relative;
+            transition: transform 0.3s;
+        }
+        .agent:hover {
+            transform: scale(1.05);
+        }
+        .agent img {
+            width: 60px; /* 缩小头像尺寸 */
+            height: 60px; /* 缩小头像尺寸 */
+            border-radius: 50%;
+        }
+        .status {
+            margin: 5px 0; /* 缩小间距 */
+            font-weight: bold;
+        }
+        .online {
+            color: green;
+        }
+        .offline {
+            color: red;
+        }
+        .connection {
+            position: absolute;
+            height: 1px; /* 缩小虚线高度 */
+            background: repeating-linear-gradient(90deg, transparent, transparent 3px, #000 3px, #000 6px); /* 缩小虚线间距 */
+            animation: moveDots 1s linear infinite;
+        }
+        .connection-top {
+            top: 20%; /* 缩小垂直位置 */
+        }
+        .connection-bottom {
+            top: 40%; /* 缩小垂直位置 */
+        }
+        .connection-reverse-top {
+            top: 60%; /* 缩小垂直位置 */
+            transform: rotate(180deg);
+        }
+        .connection-reverse-bottom {
+            top: 80%; /* 缩小垂直位置 */
+            transform: rotate(180deg);
+        }
+        @keyframes moveDots {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 6px 0; /* 调整动画步长 */
+            }
+        }
+        .chat-container {
+            width: 400px;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .message-box {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 300px;
+            overflow-y: auto;
+        }
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 70%;
+            word-wrap: break-word;
+            display: flex;
+            align-items: center;
+        }
+        .police {
+            align-self: flex-end;
+            background-color: #ccc;
+            color: #000;
+            flex-direction: row-reverse;
+        }
+        .camera {
+            align-self: flex-start;
+            background-color: #007bff;
+            color: #fff;
+            justify-content: flex-start; /* 确保内容从左边开始 */
+            flex-direction: row; /* 确保头像在消息的左边 */
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px; /* 调整头像和消息文本之间的间距 */
+        }
+
+        .input-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .input-container input {
+            flex: 1;
+            padding: 5px;
+            margin-right: 10px;
+        }
+        .control-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+        .plate-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .fault-button {
+            position: absolute;
+            top: 40px;
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <button class="control-button" id="controlButton" onclick="toggleIot()">启动智联网</button>
+    <button class="plate-button" id="plateButton" onclick="requestPlate()">车牌采集</button>
+    <button class="fault-button" id="cameraFaultButton" onclick="handleCameraFault()">摄像头故障处理</button>
+    <div class="container">
+        <div class="agent" id="camera-agent">
+            <img src="camera.jpg" alt="摄像头">
+            <div class="status online" id="camera-status">在线</div>
+            <div class="data-content" id="camera-data">
+            </div>
+        </div>
+        <div class="agent" id="police-agent">
+            <img src="police.png" alt="警察">
+            <div class="status offline" id="police-status">离线</div>
+            <div class="data-content" id="police-data">
+            </div>
+        </div>
+        <div class="connection connection-top" id="connection-top"></div>
+        <div class="connection connection-bottom" id="connection-bottom"></div>
+        <div class="connection connection-reverse-top" id="connection-reverse-top"></div>
+        <div class="connection connection-reverse-bottom" id="connection-reverse-bottom"></div>
+    </div>
+    <div class="chat-container">
+        <div class="message-box" id="messageBox">
+            <!-- 消息将在这里动态添加 -->
+        </div>
+        <div class="input-container">
+            <input type="text" id="messageInput" placeholder="输入消息...">
+            <button onclick="sendMessage()">发送</button>
+        </div>
+    </div>
+
+    <script>
+        let iotActive = false;
+        let messageInterval;
+        let idleInterval;
+
+        function addMessage(avatar, text, className) {
+            const messageBox = document.getElementById('messageBox');
+            const messageContainer = document.createElement('div');
+            messageContainer.className = className;
+
+            const avatarImg = document.createElement('img');
+            avatarImg.src = avatar;
+            avatarImg.className = 'avatar';
+
+            const messageText = document.createElement('span');
+            messageText.textContent = text;
+
+            messageContainer.appendChild(avatarImg); // 头像放在消息文本的左边
+            messageContainer.appendChild(messageText);
+            messageBox.appendChild(messageContainer);
+            messageBox.scrollTop = messageBox.scrollHeight; // 滚动到最新消息
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const messageText = messageInput.value.trim();
+
+            if (messageText) {
+                addMessage('police.png', '需要采集的车牌号为：' + messageText, 'message police');
+
+                // 模拟摄像头智能体回复
+                setTimeout(() => {
+                    addMessage('camera.jpg', '正在采集：' + messageText, 'message camera');
+                }, 2000);
+
+                // 模拟摄像头智能体发送车牌通过信息
+                setTimeout(() => {
+                    addMessage('camera.jpg', '2024年9月1日，车牌号为：' + messageText + ' 通过重庆长江大桥', 'message camera');
+                }, 6000);
+
+                // 模拟警察智能体回复收到
+                setTimeout(() => {
+                    addMessage('police.png', '收到', 'message police');
+
+                    // 过两秒钟，摄像头智能体发送待机中
+                    setTimeout(() => {
+                        addMessage('camera.jpg', '待机中', 'message camera');
+
+                        // 过两秒钟，警察智能体发送待机中
+                        setTimeout(() => {
+                            addMessage('police.png', '待机中', 'message police');
+
+                            // 开始重复发送待机中
+                            startIdleMessages();
+                        }, 2000);
+                    }, 2000);
+                }, 8000);
+
+                messageInput.value = '';
+            }
+        }
+
+        function startIotMessages() {
+            let delay = 2000;
+            const messages = [
+                { avatar: 'police.png', text: '已在线', className: 'message police' },
+                { avatar: 'camera.jpg', text: '已在线', className: 'message camera' },
+                { avatar: 'police.png', text: '已成功连接摄像头', className: 'message police' },
+                { avatar: 'camera.jpg', text: '对接成功', className: 'message camera' },
+                { avatar: 'police.png', text: '待机中', className: 'message police' },
+                { avatar: 'camera.jpg', text: '待机中', className: 'message camera' }
+            ];
+
+            messageInterval = setInterval(() => {
+                if (messages.length > 0) {
+                    const msg = messages.shift();
+                    addMessage(msg.avatar, msg.text, msg.className);
+                } else {
+                    clearInterval(messageInterval);
+                    startIdleMessages();
+                }
+            }, delay);
+        }
+
+        function startIdleMessages() {
+            let delay = 2000;
+            const idleMessages = [
+                { avatar: 'police.png', text: '待机中', className: 'message police' },
+                { avatar: 'camera.jpg', text: '待机中', className: 'message camera' }
+            ];
+
+            idleInterval = setInterval(() => {
+                idleMessages.forEach(msg => addMessage(msg.avatar, msg.text, msg.className));
+            }, delay);
+        }
+
+        function toggleIot() {
+        const controlButton = document.getElementById('controlButton');
+        iotActive = !iotActive;
+        if (iotActive) {
+            controlButton.textContent = '关闭智联网';
+            setStatus('camera', '在线');
+            setStatus('police', '在线');
+            startIotMessages();
+        } else {
+            controlButton.textContent = '启动智联网';
+            clearInterval(messageInterval);
+            clearInterval(idleInterval);
+            setStatus('camera', '离线');
+            setStatus('police', '离线');
+        }
+    }
+
+        function requestPlate() {
+            clearInterval(idleInterval);
+            addMessage('police.png', '请用户输入需要采集的车牌号', 'message police');
+        }
+
+        function handleCameraFault() {
+            clearInterval(idleInterval);
+            addMessage('camera.jpg', '摄像头因高温原因损坏，部分功能无法正常使用，请求维修。地点在重庆市沙坪坝区东北部，嘉陵江畔磁南街1号位置。', 'message camera');
+
+            setTimeout(() => {
+                addMessage('police.png', '收到维修请求，正在联系维修人员', 'message police');
+            }, 2000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', '收到', 'message camera');
+            }, 4000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', '待机中', 'message camera');
+            }, 6000);
+
+            setTimeout(() => {
+                addMessage('police.png', '待机中', 'message police');
+            }, 8000);
+
+            // 停止重复发送待机中
+            clearInterval(idleInterval);
+        }
+
+        function updateConnections() {
+            var container = document.querySelector('.container');
+            var cameraAgent = document.getElementById('camera-agent');
+            var policeAgent = document.getElementById('police-agent');
+            var connections = document.querySelectorAll('.connection');
+            var containerWidth = container.offsetWidth;
+            var cameraAgentWidth = cameraAgent.offsetWidth;
+            var policeAgentWidth = policeAgent.offsetWidth;
+            var gap = (containerWidth - cameraAgentWidth - policeAgentWidth) / 2;
+
+            cameraAgent.style.left = 120 + 'px';
+            policeAgent.style.right = 7 + 'px';
+
+            connections.forEach(function(connection) {
+                connection.style.left = (cameraAgentWidth + gap - 20) + 'px';
+                connection.style.width = (gap - 7) + 'px';
+            });
+        }
+
+         function setStatus(agent, status) {
+        var statusElement = document.getElementById(agent + '-status');
+        if (status === '在线') {
+            statusElement.classList.remove('offline');
+            statusElement.classList.add('online');
+        } else {
+            statusElement.classList.remove('online');
+            statusElement.classList.add('offline');
+        }
+        statusElement.textContent = status;
+        checkStatus();
+    }
+
+        function checkStatus() {
+        var cameraStatus = document.getElementById('camera-status').classList.contains('online');
+        var policeStatus = document.getElementById('police-status').classList.contains('online');
+        var connections = document.querySelectorAll('.connection');
+
+        if (cameraStatus && policeStatus) {
+            connections.forEach(function(connection) {
+                connection.style.animationPlayState = 'running'; // 启动动画
+            });
+        } else {
+            connections.forEach(function(connection) {
+                connection.style.animationPlayState = 'paused'; // 暂停动画
+            });
+        }
+    }
+
+
+          setStatus('camera', '离线'); // 将摄像头智能体的状态设置为离线
+    setStatus('police', '离线'); // 将警察智能体的状态设置为离线
+
+    window.addEventListener('resize', updateConnections);
+    document.addEventListener('DOMContentLoaded', updateConnections);
+</script>
+</body>
+</html>

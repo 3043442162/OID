@@ -39,6 +39,6 @@ public class OID {
     /**
      * oid对应ip地址
      */
-    @NotBlank
-    private String ipAddress;
+    @NotNull
+    private Integer oidXml;
 }

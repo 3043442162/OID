@@ -92,7 +92,7 @@ public class OIDRelationServiceImpl extends ServiceImpl<OIDRelationMapper, OIDRe
         wrapper.select(OIDRelation::getFatherId);
 
         OIDRelation oidRelation = baseMapper.selectOne(wrapper);
-        return oidRelation.getFatherId();
+        return oidRelation == null ? 0:oidRelation.getFatherId();
     }
 
 }
