@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>互动页面</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            flex-direction: column; /* 垂直排列子元素 */
+        }
+        .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 80%;
+            max-width: 800px;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .agent {
+            border: 1px solid #ccc;
+            padding: 10px; /* 缩小内边距 */
+            width: 200px; /* 缩小宽度 */
+            text-align: center;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            position: relative;
+            transition: transform 0.3s;
+        }
+        .agent:hover {
+            transform: scale(1.05);
+        }
+        .agent img {
+            width: 60px; /* 缩小头像尺寸 */
+            height: 60px; /* 缩小头像尺寸 */
+            border-radius: 50%;
+        }
+        .status {
+            margin: 5px 0; /* 缩小间距 */
+            font-weight: bold;
+        }
+        .online {
+            color: green;
+        }
+        .offline {
+            color: red;
+        }
+        .connection {
+            position: absolute;
+            height: 1px; /* 缩小虚线高度 */
+            background: repeating-linear-gradient(90deg, transparent, transparent 3px, #000 3px, #000 6px); /* 缩小虚线间距 */
+            animation: moveDots 1s linear infinite;
+        }
+        .connection-top {
+            top: 20%; /* 缩小垂直位置 */
+        }
+        .connection-bottom {
+            top: 40%; /* 缩小垂直位置 */
+        }
+        .connection-reverse-top {
+            top: 60%; /* 缩小垂直位置 */
+            transform: rotate(180deg);
+        }
+        .connection-reverse-bottom {
+            top: 80%; /* 缩小垂直位置 */
+            transform: rotate(180deg);
+        }
+        @keyframes moveDots {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 6px 0; /* 调整动画步长 */
+            }
+        }
+        .chat-container {
+            width: 400px;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .message-box {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 300px;
+            overflow-y: auto;
+        }
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 70%;
+            word-wrap: break-word;
+            display: flex;
+            align-items: center;
+        }
+        .police {
+            align-self: flex-end;
+            background-color: #ccc;
+            color: #000;
+            flex-direction: row-reverse;
+        }
+        .camera {
+            align-self: flex-start;
+            background-color: #007bff;
+            color: #fff;
+            justify-content: flex-start; /* 确保内容从左边开始 */
+            flex-direction: row; /* 确保头像在消息的左边 */
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px; /* 调整头像和消息文本之间的间距 */
+        }
+
+        .input-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .input-container input {
+            flex: 1;
+            padding: 5px;
+            margin-right: 10px;
+        }
+        .control-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+        .object {
+            position: absolute;
+            top: 40px;
+            left: 10px;
+        }
+        .plate-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .flow-feedback {
+            position: absolute;
+            top: 40px;
+            right: 10px;
+        }
+        .crowdcontrol {
+            position: absolute;
+            top: 70px;
+            right: 10px;
+        }
+        .fault-button {
+            position: absolute;
+            top: 100px;
+            right: 10px;
+        }
+          .toggle-button {
+            position: absolute;
+            top: 70px;
+            left: 10px;
+            padding: 10px 20px;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .button-container {
+            position: absolute;
+            top: 100px;
+            left: 10px;
+            display: none;
+            flex-direction: column;
+        }
+        .button-container button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            heigth: 40px;
+            width: 120px;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+         .chat {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+             gap:20px;
+        }
+    </style>
+</head>
+<body>
+    <button class="control-button" id="controlButton" onclick="toggleIot()">启动智联网</button>
+    <button class="plate-button" id="plateButton" onclick="requestPlate()">车牌采集</button>
+    <button class="flow-feedback" id="flowfeedback" onclick="feedback()">车流量反馈</button>
+    <button class="crowdcontrol" id="crowdcontrol" onclick="crowdcontrol()">人流量管控</button>
+    <button class="fault-button" id="cameraFaultButton" onclick="handleCameraFault()">摄像头故障处理</button>
+    <button class="object" onclick="showObjectives()">智能体互动的协作目标</button>
+    <div class="container">
+        <div class="agent" id="camera-agent">
+            <img src="camera.jpg" alt="摄像头">
+            <div class="status online" id="camera-status">在线</div>
+            <div class="data-content" id="camera-data">
+            </div>
+        </div>
+        <div class="agent" id="police-agent">
+            <img src="police.png" alt="警察">
+            <div class="status offline" id="police-status">离线</div>
+            <div class="data-content" id="police-data">
+            </div>
+        </div>
+        <div class="connection connection-top" id="connection-top"></div>
+        <div class="connection connection-bottom" id="connection-bottom"></div>
+        <div class="connection connection-reverse-top" id="connection-reverse-top"></div>
+        <div class="connection connection-reverse-bottom" id="connection-reverse-bottom"></div>
+    </div>
+    <div class="chat">
+        <div class="chat-container" style="margin-right: auto;">
+        <div class="message-box" id="messageBox">
+            <!-- 消息将在这里动态添加 -->
+        </div>
+        <div class="input-container">
+            <input type="text" id="messageInput" placeholder="输入消息...">
+            <button onclick="sendMessage()">发送</button>
+        </div>
+    </div>
+<!--        设置两个聊天框的水平间距-->
+
+     <div class="chat-container" style="margin-left: auto;">
+        <div class="message-box" id="messageBox1">
+            <!-- 消息将在这里动态添加 -->
+        </div>
+        <div class="input-container">
+        </div>
+    </div>
+    </div>
+    <div class="objectives" id="objectives" style="display: none;">
+        智能体的协作目标：
+        <p>
+            目标一：
+            为了实现新科技趋势：用人工智能实现人机物和谐智能互联的目标
+        </p>
+        <p>
+             目标二：
+             为了达到目标，国际标准定义了智能体，其中有策略库，有着e_x对应功能
+        </p>
+        <p>
+            目标三：
+            为了实现智能体和谐的目标，智能体被提出需求后，在达成对方需求的同时也需要向对方智能体提出需求，
+            提出需求的相应的机制称之为“执行策略”，执行策略由资深工程师制定，在执行引擎中运行。
+        </p>
+    </div>
+
+     <button id="toggleButton" class="toggle-button">互动参数化</button>
+    <div id="buttonContainer" class="button-container">
+        <button onclick="show1();show11()">车牌采集</button>
+        <button onclick="show2();show12()">车流量反馈</button>
+        <button onclick="show3();show13()">人流量管控</button>
+        <button onclick="show4();show14()">摄像头故障处理</button>
+    </div>
+    <script>
+         // 获取折叠按钮和按钮容器的元素
+        const toggleButton = document.getElementById('toggleButton');
+        const buttonContainer = document.getElementById('buttonContainer');
+
+        // 设置折叠按钮的点击事件
+        toggleButton.addEventListener('click', () => {
+            if (buttonContainer.style.display === 'none' || buttonContainer.style.display === '') {
+                buttonContainer.style.display = 'flex';  // 展开按钮容器
+            } else {
+                buttonContainer.style.display = 'none';  // 收起按钮容器
+            }
+        });
+        let iotActive = false;
+        let messageInterval;
+        let idleInterval;
+        let messageInterval1;
+
+          function addMessage(avatar, text, className, messageBoxId, messageBoxId1) {
+       const messageBox = document.getElementById(messageBoxId);
+       const messageBox1 = document.getElementById(messageBoxId1);
+
+       const messageContainer = document.createElement('div');
+       messageContainer.className = className;
+
+       const avatarImg = document.createElement('img');
+       avatarImg.src = avatar;
+       avatarImg.className = 'avatar';
+
+       const messageText = document.createElement('span');
+       messageText.textContent = text;
+
+       messageContainer.appendChild(avatarImg); // 头像放在消息文本的左边
+       messageContainer.appendChild(messageText);
+
+       if (messageBox) {
+           messageBox.appendChild(messageContainer.cloneNode(true)); // 克隆消息容器并添加到第一个聊天框
+           messageBox.scrollTop = messageBox.scrollHeight;
+       }
+
+       if (messageBox1) {
+           messageBox1.appendChild(messageContainer.cloneNode(true)); // 克隆消息容器并添加到第二个聊天框
+           messageBox1.scrollTop = messageBox1.scrollHeight;
+       }
+   }
+
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const messageText = messageInput.value.trim();
+
+            if (messageText) {
+                addMessage('police.png', '需要采集的车牌号为：' + messageText, 'message police','messageBox');
+
+                // 模拟摄像头智能体回复
+                setTimeout(() => {
+                    addMessage('camera.jpg', '正在实时采集车牌号为' + messageText+'的车辆信息', 'message camera','messageBox');
+                }, 2000);
+
+                // 模拟摄像头智能体发送车牌通过信息
+                setTimeout(() => {
+                    addMessage('camera.jpg', '2024年9月1日，车牌号为：' + messageText + ' 通过重庆长江大桥', 'message camera','messageBox');
+                }, 6000);
+
+                // 模拟警察智能体回复收到
+                setTimeout(() => {
+                    addMessage('police.png', '收到车辆信息', 'message police','messageBox');
+
+                    // 过两秒钟，摄像头智能体发送待机中
+                    setTimeout(() => {
+                        addMessage('camera.jpg', '待机中', 'message camera','messageBox');
+
+                        // 过两秒钟，警察智能体发送待机中
+                        setTimeout(() => {
+                            addMessage('police.png', '待机中', 'message police','messageBox');
+
+                            // 开始重复发送待机中
+                            startIdleMessages();
+                        }, 2000);
+                    }, 2000);
+                }, 8000);
+
+                messageInput.value = '';
+            }
+        }
+
+        function startIotMessages() {
+            let delay = 2000;
+            const messages = [
+                { avatar: 'police.png', text: '已在线', className: 'message police',messageBoxId: 'messageBox' },
+                { avatar: 'camera.jpg', text: '已在线', className: 'message camera' ,messageBoxId: 'messageBox'},
+                { avatar: 'police.png', text: '已成功连接摄像头', className: 'message police',messageBoxId: 'messageBox' },
+                { avatar: 'camera.jpg', text: '对接成功', className: 'message camera' ,messageBoxId: 'messageBox'},
+                { avatar: 'police.png', text: '待机中', className: 'message police' ,messageBoxId: 'messageBox'},
+                { avatar: 'camera.jpg', text: '待机中', className: 'message camera' ,messageBoxId: 'messageBox'}
+            ];
+
+            messageInterval = setInterval(() => {
+                if (messages.length > 0) {
+                    const msg = messages.shift();
+                    addMessage(msg.avatar, msg.text, msg.className,msg.messageBoxId);
+                } else {
+                    clearInterval(messageInterval);
+                    startIdleMessages();
+                }
+            }, delay);
+        }
+
+
+
+        function startIdleMessages() {
+            let delay = 2000;
+            const idleMessages = [
+                { avatar: 'police.png', text: '待机中', className: 'message police' },
+                { avatar: 'camera.jpg', text: '待机中', className: 'message camera' }
+            ];
+
+            idleInterval = setInterval(() => {
+                idleMessages.forEach(msg => addMessage(msg.avatar, msg.text, msg.className));
+            }, delay);
+        }
+
+        function toggleIot() {
+        const controlButton = document.getElementById('controlButton');
+        iotActive = !iotActive;
+        if (iotActive) {
+            controlButton.textContent = '关闭智联网';
+            setStatus('camera', '在线');
+            setStatus('police', '在线');
+            startIotMessages();
+            startIotMessages1();
+        } else {
+            controlButton.textContent = '启动智联网';
+            clearInterval(messageInterval);
+            clearInterval(messageInterval1);
+            // clearInterval(idleInterval);
+
+            setStatus('camera', '离线');
+            setStatus('police', '离线');
+        }
+    }
+
+        function requestPlate() {
+            clearInterval(idleInterval);
+            addMessage('police.png', '请用户输入需要采集的车牌号', 'message police','messageBox');
+        }
+
+        function handleCameraFault() {
+            clearInterval(idleInterval);
+            addMessage('camera.jpg', '摄像头因高温原因损坏，部分功能无法正常使用，' +
+                '请求维修。地点在重庆市沙坪坝区东北部，嘉陵江畔磁南街1号位置。', 'message camera','messageBox');
+
+            setTimeout(() => {
+                addMessage('police.png', '收到维修请求，正在联系维修人员', 'message police','messageBox');
+            }, 2000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', '收到，正在等待维修人员进行维修', 'message camera','messageBox');
+            }, 4000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', '维修完成，摄像头功能恢复正常', 'message camera','messageBox');
+            }, 6000);
+
+            setTimeout(() => {
+                addMessage('police.png', '已收到摄像头维修完成信息', 'message police','messageBox');
+            }, 8000);
+             setTimeout(() => {
+                addMessage('camera.jpg', '待机中', 'message camera','messageBox');
+            }, 10000);
+
+            setTimeout(() => {
+                addMessage('police.png', '待机中', 'message police','messageBox');
+            }, 12000);
+
+            // 停止重复发送待机中
+            clearInterval(idleInterval);
+        }
+        function crowdcontrol() {
+            clearInterval(idleInterval);
+            addMessage('camera.jpg', '通过人数采集阈值监测显示，' +
+                '重庆市两江新区礼嘉国际商务旅游城金渝大道人流量过大，已超过管控阈值，需要对人流量进行实时管控', 'message camera','messageBox');
+
+            setTimeout(() => {
+                addMessage('police.png', '收到人流量管控请求，正在安排人员去现场进行有效管理', 'message police','messageBox');
+            }, 2000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', '收到，正在实时进行人数采集', 'message camera','messageBox');
+            }, 4000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', '人流量已降低到可管控的数量内，请求取消现场管控', 'message camera','messageBox');
+            }, 6000);
+
+            setTimeout(() => {
+                addMessage('police.png', '收到取消现场管控请求，正在安排现场人员撤离', 'message police','messageBox');
+            }, 8000);
+             setTimeout(() => {
+                addMessage('camera.jpg', '待机中', 'message camera','messageBox');
+            }, 10000);
+            setTimeout(() => {
+                addMessage('police.png', '待机中', 'message police','messageBox');
+            }, 12000);
+            setTimeout(() => {
+                addMessage('camera.jpg', '待机中', 'message camera','messageBox');
+            }, 14000);
+            setTimeout(() => {
+                addMessage('police.png', '待机中', 'message police','messageBox');
+            }, 16000);
+            // 停止重复发送待机中
+            clearInterval(idleInterval);
+        }
+        function feedback() {
+            clearInterval(idleInterval);
+            addMessage('police.png', '因赛事活动，需要对通过重庆市江北区观音桥街道的车辆数量进行统计', 'message police','messageBox');
+
+            setTimeout(() => {
+                addMessage('camera.jpg', '收到车流量反馈需求，正在进行车流量的实时统计', 'message camera','messageBox');
+            }, 2000);
+
+            setTimeout(() => {
+                addMessage('police.png', '好的，正在接收车流量数据', 'message police','messageBox');
+            }, 4000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', '目前预测的车流量为：300辆/小时', 'message camera','messageBox');
+            }, 6000);
+
+            setTimeout(() => {
+                addMessage('police.png', '收到车流量数据，正在进行车流量的分析', 'message police','messageBox');
+            }, 8000);
+
+             setTimeout(() => {
+                addMessage('police.png', '分析显示，目前该地区车流量较大，正在联系相关部门进行处理，请继续反馈车流量实时数据', 'message police','messageBox');
+            }, 10000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', '收到，正在持续实时统计车流量数据', 'message camera','messageBox');
+            }, 12000);
+            // 停止重复发送待机中
+            clearInterval(idleInterval);
+        }
+
+        // 互动参数化
+         function show1() {
+            clearInterval(idleInterval);
+            addMessage('police.png', 'e1|r1: null | 车辆识别', 'message police','messageBox');
+
+            setTimeout(() => {
+                addMessage('camera.jpg', 'e1|r1: 车辆识别 | 车牌比对', 'message camera','messageBox');
+            }, 2000);
+
+            setTimeout(() => {
+                addMessage('police.png', 'e2|r2: 车牌比对 | 确认车辆', 'message police','messageBox');
+            }, 4000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', 'e2|r2: 确认车辆 | null', 'message camera','messageBox');
+            }, 6000);
+            // 停止重复发送待机中
+            clearInterval(idleInterval);
+        }
+        function show11() {
+            clearInterval(idleInterval);
+            addMessage('police.png', "env: Environment,private val frame: Int = 1000 ) : FNProxy(env)" +
+                "  private val cameraInfo: MutableMap<OIDTree, MutableList<CameraInfo>> = mutableMapOf()", 'message police','messageBox1');
+
+            setTimeout(() => {
+                addMessage('camera.jpg', "private var working = false" +
+                    "    var workMode: PoliceMode = PoliceMode.RELEASE" +
+                    "        private set" +
+                    "    private var searchTarget: CarInfo? = null", 'message camera','messageBox1');
+            }, 2000);
+
+            setTimeout(() => {
+                addMessage('police.png',  "private var warning: Boolean = false private val warnList: MutableMap<OIDTree, " +
+                    "MutableList<String>> = mutableMapOf() private val checkInfoThread: Thread = Thread { checkInfo() }",'message police','messageBox1');
+            }, 4000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', +
+                    "    init {\n" +
+                    "        checkInfoThread.start()\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    val isWorking: Boolean\n" +
+                    "        get() = working", 'message camera','messageBox1');
+            }, 6000);
+            // 停止重复发送待机中
+            clearInterval(idleInterval);
+        }
+
+         function show2() {
+            clearInterval(idleInterval);
+            addMessage('police.png', 'e1|r1: null | 车辆数量统计', 'message police','messageBox');
+
+            setTimeout(() => {
+                addMessage('camera.jpg', 'e1|r1: 车辆数量统计 | 车流量数据分析', 'message camera','messageBox');
+            }, 2000);
+
+            setTimeout(() => {
+                addMessage('police.png', 'e2|r2: 车流量数据分析 | 继续接收车流量数据', 'message police','messageBox');
+            }, 4000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', 'e2|r2: 继续接收车流量数据 | null', 'message camera','messageBox');
+            }, 6000);
+            // 停止重复发送待机中
+            clearInterval(idleInterval);
+        }
+         function show12() {
+            clearInterval(idleInterval);
+            addMessage('police.png',"    private static List<String> trafficData = new ArrayList<>();\n" +
+                    "    private static int vehicleCount = 0;\n" +
+                    "\n" +
+                    "    public static void main(String[] args) {\n" +
+                    "        // 车流量数据统计\n" +
+                    "        Timer timer = new Timer();\n" +
+                    "        timer.scheduleAtFixedRate(new TimerTask() {", 'message police','messageBox1');
+
+            setTimeout(() => {
+                addMessage('camera.jpg', "    Timer analysisTimer = new Timer();\n" +
+                        "        analysisTimer.scheduleAtFixedRate(new TimerTask() {\n" +
+                        "            @Override\n" +
+                        "            public void run() {\n" +
+                        "                analyzeTrafficData();\n" +
+                        "            }\n" +
+                        "        }, 4000, 4000); ", 'message camera','messageBox1');
+            }, 2000);
+
+            setTimeout(() => {
+                addMessage('police.png', "     // " +
+                        "        String data = \"Vehicle \" + (vehicleCount + 1);\n" +
+                        "        trafficData.add(data);\n" +
+                        "        vehicleCount++;\n" +
+                        "        System.out.println(\"继续接收车流量数据: \" + data);\n" +
+                        "    }\n" +
+                        "\n" +
+                        "    private static void analyzeTrafficData() {", 'message police','messageBox1');
+            }, 4000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', '\n' +
+                        '    private static void stopReceivingTrafficData() {\n' +
+                        '        if (receiveTimer != null) {\n' +
+                        '            receiveTimer.cancel();\n' +
+                        '            receiveTimer = null;', 'message camera','messageBox1');
+            }, 6000);
+            // 停止重复发送待机中
+            clearInterval(idleInterval);
+        }
+         function show3() {
+            clearInterval(idleInterval);
+            addMessage('camera.jpg', 'e1|r1: null | 人流量管控', 'message camera','messageBox');
+
+            setTimeout(() => {
+                addMessage('police.png', 'e1|r1: 人流量管控 | 是否继续管控', 'message police','messageBox');
+            }, 2000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', 'e2|r2: 是否继续管控 | 取消现场管控', 'message camera','messageBox');
+            }, 4000);
+
+            setTimeout(() => {
+                addMessage('police.png', 'e2|r2: 取消现场管控 | null', 'message police','messageBox');
+            }, 6000);
+            // 停止重复发送待机中
+            clearInterval(idleInterval);
+        }
+        function show13() {
+            clearInterval(idleInterval);
+            addMessage('camera.jpg', " private static List<String> crowdData = new ArrayList<>();\n" +
+                    "    private static boolean isControlling = false;\n" +
+                    "    private static Timer controlTimer;\n" +
+                    "\n" +
+                    "    public static void main(String[] args) {", 'message camera','messageBox1');
+
+            setTimeout(() => {
+                addMessage('police.png', " private static List<String> crowdData = new ArrayList<>();\n" +
+                        "    private static boolean isControlling = false;\n" +
+                        "    private static Timer controlTimer;\n" +
+                        "\n" +
+                        "    public static void main(String[] args) {", 'message police','messageBox1');
+            }, 2000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', "     String data = \"Crowd \" + (crowdData.size() + 1);\n" +
+                        "            crowdData.add(data);\n" +
+                        "\n" +
+                        "            // 询问是否继续管控\n" +
+                        "            controlTimer.schedule(new TimerTask() {\n" +
+                        "                @Override\n" +
+                        "                public void run() {\n" +
+                        "                    askToContinueControl();", 'message camera','messageBox1');
+            }, 4000);
+
+            setTimeout(() => {
+                addMessage('police.png', " controlTimer.schedule(new TimerTask() {\n" +
+                        "            @Override\n" +
+                        "            public void run() {\n" +
+                        "                cancelControl();\n" +
+                        "            }\n" +
+                        "        }, 4000);\n" +
+                        "    }\n" +
+                        "\n" +
+                        "    private static void cancelControl() {\n" +
+                        "        System.out.println(\"取消现场管控: 取消现场管控\");\n" +
+                        "        isControlling = false;\n" +
+                        "        crowdData.clear();", 'message police','messageBox1');
+            }, 6000);
+            // 停止重复发送待机中
+            clearInterval(idleInterval);
+        }
+
+         function show4() {
+            clearInterval(idleInterval);
+            addMessage('camera.jpg', 'e1|r1: null | 故障报修', 'message camera','messageBox');
+
+            setTimeout(() => {
+                addMessage('police.png', 'e1|r1: 故障报修 | 等待维修完成', 'message police','messageBox');
+            }, 2000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', 'e2|r2: 等待维修完成 | 维修完成', 'message camera','messageBox');
+            }, 4000);
+
+             setTimeout(() => {
+                addMessage('police.png', 'e2|r2: 维修完成 | null', 'message police','messageBox');
+            }, 6000);
+            // 停止重复发送待机中
+            clearInterval(idleInterval);
+        }
+        function show14() {
+            clearInterval(idleInterval);
+            addMessage('camera.jpg', " public static void main(String[] args) {\n" +
+                    "        // 启动摄像头故障报修\n" +
+                    "        startCameraRepair();\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    private static void startCameraRepair() {\n" +
+                    "        repairTimer = new Timer();\n" +
+                    "        repairTimer.scheduleAtFixedRate(new TimerTask() {\n" +
+                    "            @Override", 'message camera','messageBox1');
+
+            setTimeout(() => {
+                addMessage('police.png', " private static void reportCameraFailure() {\n" +
+                        "        if (!isRepairing) {\n" +
+                        "            // 开始故障报修\n" +
+                        "            isRepairing = true;\n" +
+                        "            System.out.println(\"摄像头故障报修: 开始报修\");\n" +
+                        "\n" +
+                        "            repairTimer.schedule(new TimerTask() {\n" +
+                        "                @Override", 'message police','messageBox1');
+            }, 2000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', " private static void waitForRepairCompletion() {\n" +
+                        "        System.out.println(\"等待维修完成: 正在等待维修完成\");\n" +
+                        "\n" +
+                        "        repairTimer.schedule(new TimerTask() {\n" +
+                        "            @Override\n" +
+                        "            public void run() {\n" +
+                        "                repairCompletion();\n" +
+                        "            }\n" +
+                        "        }, 4000);", 'message camera','messageBox1');
+            }, 4000);
+
+             setTimeout(() => {
+                addMessage('police.png', " private static void repairCompletion() {\n" +
+                        "        isRepairing = false;\n" +
+                        "\n" +
+                        "        // 停止维修定时器\n" +
+                        "        repairTimer.cancel();\n" +
+                        "        repairTimer = null;", 'message police','messageBox1');
+            }, 6000);
+            // 停止重复发送待机中
+            clearInterval(idleInterval);
+        }
+        function showone() {
+            clearInterval(idleInterval);
+            addMessage('police.png', '代码1', 'message police');
+
+            setTimeout(() => {
+                addMessage('camera.jpg', '代码2', 'message camera');
+            }, 2000);
+
+            setTimeout(() => {
+                addMessage('police.png', '代码3', 'message police');
+            }, 4000);
+
+            setTimeout(() => {
+                addMessage('camera.jpg', '代码4', 'message camera');
+            }, 6000);
+            // 停止重复发送待机中
+            clearInterval(idleInterval);
+        }
+        function updateConnections() {
+            var container = document.querySelector('.container');
+            var cameraAgent = document.getElementById('camera-agent');
+            var policeAgent = document.getElementById('police-agent');
+            var connections = document.querySelectorAll('.connection');
+            var containerWidth = container.offsetWidth;
+            var cameraAgentWidth = cameraAgent.offsetWidth;
+            var policeAgentWidth = policeAgent.offsetWidth;
+            var gap = (containerWidth - cameraAgentWidth - policeAgentWidth) / 2;
+
+            cameraAgent.style.left = 120 + 'px';
+            policeAgent.style.right = 7 + 'px';
+
+            connections.forEach(function(connection) {
+                connection.style.left = (cameraAgentWidth + gap - 20) + 'px';
+                connection.style.width = (gap - 7) + 'px';
+            });
+        }
+
+         function setStatus(agent, status) {
+        var statusElement = document.getElementById(agent + '-status');
+        if (status === '在线') {
+            statusElement.classList.remove('offline');
+            statusElement.classList.add('online');
+        } else {
+            statusElement.classList.remove('online');
+            statusElement.classList.add('offline');
+        }
+        statusElement.textContent = status;
+        checkStatus();
+    }
+
+        function checkStatus() {
+        var cameraStatus = document.getElementById('camera-status').classList.contains('online');
+        var policeStatus = document.getElementById('police-status').classList.contains('online');
+        var connections = document.querySelectorAll('.connection');
+
+        if (cameraStatus && policeStatus) {
+            connections.forEach(function(connection) {
+                connection.style.animationPlayState = 'running'; // 启动动画
+            });
+        } else {
+            connections.forEach(function(connection) {
+                connection.style.animationPlayState = 'paused'; // 暂停动画
+            });
+        }
+    }
+     function showObjectives() {
+            // 创建一个新的窗口
+            var newWindow = window.open('', '_blank', 'width=600,height=400');
+            // 将目标内容写入新窗口
+            newWindow.document.write('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>智能体的协作目标</title></head><body>');
+            newWindow.document.write(document.getElementById('objectives').innerHTML);
+            newWindow.document.write('</body></html>');
+        }
+
+
+          setStatus('camera', '离线'); // 将摄像头智能体的状态设置为离线
+    setStatus('police', '离线'); // 将警察智能体的状态设置为离线
+
+    window.addEventListener('resize', updateConnections);
+    document.addEventListener('DOMContentLoaded', updateConnections);
+</script>
+</body>
+</html>

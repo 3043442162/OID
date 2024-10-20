@@ -1,0 +1,162 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta name="viewport" content="initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+	<meta charset="UTF-8">
+	<title>登录页</title>
+	<link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+	<div class="loginav">
+		<div class="video"><video src="images/video.mp4" muted autoplay loop></div>
+		<div class=""></div>
+		<div class="loginbox boxall">
+			<div class="logo">
+				<h1>OID管理平台登录页</h1>
+				<h2>zhi neng ke ji ping tai</h2>
+				<!-- <img src="images/logo.png"> -->
+			</div>
+			<div class="logintit">用户登录</div>
+			<ul class="logininput">
+				<li>
+					<i><img src="images/user.png"></i>
+					<input id="account" class="forminput" value="" type="text" placeholder="用户名">
+				</li>
+				<li>
+					<i><img src="images/password.png"></i>
+					<input id="password" class="forminput" type="password" value="" placeholder="密码">
+				</li>
+
+
+				<div class=" flex1" style="padding: 15px 0;">
+					<label> <input type="checkbox" checked class="aui-checkbox">&nbsp;记住密码</label>
+					<a href="#" class="text-primary"> 忘记密码？</a>
+				</div>
+				<li>
+					<a href="#" class="btn btnblock btn-lg btn-block btn-primary" onclick="submit()">登录</a>
+				</li>
+			</ul>
+			<div class="boxfoot"></div>
+		</div>
+	</div>
+<!--	<div class="copyright">版权所有：All Right By <a href="http://www.bootstrapmb.com">Reserved</a> 2022-2022</div>-->
+
+	<canvas id='canvas'
+		style="position:fixed; width:100%; height:100%; left: 0; top: 0; opacity: .3; pointer-events: none;"></canvas>
+
+	<div style="width:300px;margin:0 auto; padding:20px 0;">
+		<a target="_blank" href="https://beian.miit.gov.cn" style="display:inline-block;text-decoration:none;height:20px;line-height:20px;"><img src="img/batb.png" style="float:left;"/><p style="float:left;height:20px;line-height:20px;margin: 0px 0px 0px 5px; color:#939393;">渝ICP备20009404号</p></a>
+	</div>
+	<script>
+
+
+
+
+		// 发送请求
+
+		function submit(){
+			var account = document.getElementById("account")
+			var password = document.getElementById("password")
+			// console.log(account.value, password.value)
+			var xhr = new XMLHttpRequest();
+			xhr.open("Get", "http://localhost:80/user/login?"+"account="+account.value+"&"+ "password="+password.value);
+			// # token名称 (同时也是cookie名称)  这里官方文档的快速入门中使用的是satoken
+			// xhr.setRequestHeader("token-name", "Authorization")
+			// // # token前缀 在前端代码中需要加入该前缀，具体可看后文
+			// xhr.setRequestHeader("token-prefix"," Bearer")
+			// // # 是否从header中读取token
+			// xhr.setRequestHeader("is-read-header", false)
+			// xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+			// xhr.setRequestHeader("Referer", "ROOT")
+			// xhr.setRequestHeader("Content-Type", "application/json");
+			// 定义处理请求成功的函数
+
+			xhr.onreadystatechange = function() {
+
+				if (xhr.readyState === 4 && xhr.status === 200) {
+					// 请求成功，获取响应的数据
+					var response = xhr.responseText;
+					const obj = JSON.parse(response);
+					console.log(obj.data);
+					if(obj.code !== 200){
+						window.alert(obj.data);
+					}else{
+						// 跳转到指定的 URL 地址
+						location.assign("../index.html");
+					}
+					// if(response)
+				}
+
+			}
+			xhr.send()
+		}
+		var canvas = document.querySelector('canvas');
+		var ctx = canvas.getContext('2d');
+		var w = window.innerWidth;//获取屏幕宽高
+		var h = window.innerHeight * 2 / 2;
+		canvas.width = w;//将屏幕宽高赋值给canvas
+		canvas.height = h;
+		// canvas.style.cssText += `;width:${w}px;height:${h}px;`;
+		var dots = [];
+		var minScale = 1;//设置圆点的最小缩放
+		var maxScale = 3;//设置圆点的最大缩放
+		var bei = 1;
+		for (var i = 0; i < 300; i += 1) {  //设置白圆点的个数
+			dots.push(new Dot())
+		}
+
+		render = () => {
+			ctx.clearRect(0, 0, w, h);
+			ctx.fillStyle = 'rgba(26,94,199,.6)';
+			ctx.fillRect(0, 0, w, h);//描绘底层蓝色背景
+			for (var i = 0; i < dots.length; i += 1) {
+				var dot = dots[i];
+				dot.update();
+				dot.paint();
+
+			}
+			requestAnimationFrame(render)
+		}
+		render();
+		function Dot() {
+			this.radius = Math.floor(Math.random() * 3 + 2);//在选一个随机数为圆点半径
+			this.d = Math.random() * 2 * Math.PI;//在0-2π之间随机一个弧度值
+			this.rx = Math.random() * w * (Math.random() > 0.6 ? 2 / 3 : 1 / 4);// 选一个随机数，作为椭圆长轴顶点a的数值,也就是椭圆中心的x轴坐标，此处的x,y,是相对于椭圆圆心为中心点建立的直角坐标系。
+			this.ry = Math.random() * h - h / 2;//选一个随机数作为椭圆短轴顶点b的数值，也就是椭圆中心的y轴坐标，此处的x,y,是相对于椭圆圆心为中心点建立的直角坐标系。这两个值可以根据自已需求来定。
+			this.x = Math.cos(this.d) * this.rx + w / 2;
+			this.y = Math.sin(this.d) * this.ry + h / 2;//根据椭圆x,y求值公式，x=a*cosα，y=a*sinα.求出圆点在椭圆上的x,y轴坐标.后面加w/2,h/2只是为了居中显示。此处的x,y是相对于canvas建立的直角坐标系的，按canvas约定，其中心点（0,0）点在左上角
+			this.z = (Math.pow(Math.pow(this.rx, 2) + Math.pow(this.ry, 2), 0.5) / Math.pow(Math.pow(w / 2, 2) + Math.pow(h / 2, 2), 0.5))//求白色圆点离椭圆中心点的距离，可视为一个点到圆心的距离，用x平方+y平方=c平方求得。此处的x,y,是相对于椭圆圆心为中心点建立的直角坐标系。此处Z值只是一个比值
+			this.scale = (Math.cos(this.d) + 1) * (maxScale - minScale) / 2 + minScale;//圆点的缩放大小,根据余弦函数公式y=cosα.标准的余弦函数最大值和最小值分别为1，-1.这里要自行设置最大值和最小值，所以要进行改写
+			// this.speed = Math.random() * 0.0005 + 0.0005;
+			this.speed = Math.random() * 0.0004 + 0.0004;//圆点运动的速度
+			this.alpha = this.scale / maxScale * 0.3 + 0.1;//圆点运动的透明度
+			this.count = 0;
+			this.paint = () => {
+				ctx.fillStyle = 'rgba(0,130,255,' + this.alpha + ')';
+				ctx.beginPath();
+				ctx.arc(this.x, this.y, this.radius * this.scale * this.z, 0, Math.PI * 2);
+				ctx.fill();
+			}
+			this.update = () => {
+				this.count += 0.01;
+				if (Math.floor(this.count) % 12 === 0 && Math.floor(this.count) != 0) {
+					this.d += 0.008;
+					if (this.count > Math.floor(this.count) + 0.5) {
+						this.d -= 0.008;
+					}
+					// console.log(this.count)
+				}
+
+
+				this.x = Math.sin(this.d) * this.rx + w / 2;
+				this.y = Math.cos(this.d) * this.ry + h / 2;
+				this.d -= this.speed;//通过改变它的弧度值来改变圆点在椭圆中运动
+				this.scale = (Math.cos(this.d) + 1) * (maxScale - minScale) / 2 + minScale;
+				this.alpha = this.scale / maxScale * 0.3 + 0.1;
+			}
+		}
+	</script>
+</body>
+
+</html>
