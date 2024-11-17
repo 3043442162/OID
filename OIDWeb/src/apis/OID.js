@@ -55,13 +55,19 @@ export function uploadXml(kvs, xmlName){
 // 获取当前用户的oidxml文件列表
 export function getXmlList(){
     return http.get(
-        "/oidXml/queryXml?userId=2"
+        "/oidXml/queryXml"
     )
 }
 
 // 删除当前用户的oidxml文件
 export function deleteXml(xmlId){
     return http.get(
-        "/oidXml/deleteXml?userId=2&xmlId="+xmlId
+        "/oidXml/deleteXml?xmlId="+xmlId
+    )
+}
+//返回oid 完整信息，包括所有oid前缀和具体xml文件
+export function queryOidInformation(oidId) {
+    return http.get(
+        "/OID/query/oid/information?id="+oidId
     )
 }

@@ -1,7 +1,9 @@
 <script setup>
-import {ref,onMounted,watch,reactive} from 'vue'
-import {getOIDTree,deleteOID,queryOIDMax,registerOID,updateOID,queryFatherMaxOID,getXmlList} from '@/apis/OID';
+import {ref,onMounted,reactive} from 'vue'
+import {getOIDTree,deleteOID,queryOIDMax,registerOID,updateOID,queryFatherMaxOID,getXmlList, queryOidInformation} from '@/apis/OID';
 // import table from './components/table.vue'
+import showOID from './ShowOID.vue'
+import UpdateMeanu from "@/components/UpdateMeanu.vue";
 const flag = ref(false)
 const originOID = ref({"id":1,"label":"1:初始OID","children":[]})
 // const data = ref([{}])
@@ -11,7 +13,7 @@ const selectValue = ref('')
 const options = ref([
     {
         value: 'node1', // 业务上的值
-        label: '展示node1', // label是展示的值
+        label: '没数据', // label是展示的值
     },
     // {
     //     value: 'Option2',
@@ -19,13 +21,21 @@ const options = ref([
     //     disabled: true,
     // }
 ])
+
+const processDailogRef = ref()
+const dailRef = ref()
+// const oidXml = ref("")
+let selectXml = (data) =>{
+  // console.log(data + "data--------------------------")
+  form.oidXml = data
+}
 let fatherId = 0
 // 标记是修改行为还是新增行为
 let sign = true
 let operationNode=null
 
 const add= (node)=>{
-    console.log("add",node)
+    // console.log("add",node)
     flag.value=true
     queryOIDMax(node.id).then((response)=>{
         minValue.value = response.data+1
@@ -33,11 +43,20 @@ const add= (node)=>{
     // console.log("minValue",minValue.value)
     fatherId=node.id
     operationNode = node
+  dailRef.value.arouseMenu(fatherId, true);
+  // 设置悬浮窗显示
 }
-
+const showOIDContent = (event, data)=>{
+  console.log("==================> double click")
+  processDailogRef.value.onChangeVisable(data.id);
+  // queryOidInformation(data.id).then(res=>console.log(res))
+  // console.log(event)
+}
 const edit = ( node)=>{
     // console.log("edit",getFatherMaxValue(node.id))
     // minValue.value =
+  dailRef.value.arouseMenu(node.id, false);
+
     queryFatherMaxOID(node.id).then((response)=>{
         // console.log(response.data)
         minValue.value = response.data+1
@@ -51,7 +70,7 @@ const edit = ( node)=>{
     sign=false
 }
 const move =(node)=>{
-    console.log("remove",node)
+    // console.log("remove",node)
     // flag.value=true
     let father = originOID.value
     // 找到并删除节点
@@ -62,7 +81,7 @@ const move =(node)=>{
 }
 const query=(node)=>{
     getOIDTree(node.id, 1, 5).then( (response)=>{
-        console.log(response)
+        // console.log(response)
         node.children = response.data.children
     })
 }
@@ -83,10 +102,7 @@ const removeNode = (node, id)=>{
         removeNode(node.children[i],id)
     }
 }
-const copy = (node)=>{
-    // console.log("show"+node)
-    flag.value=true
-}
+
 const menus = [
     // { name: '复制文本', command: 'copy' },
     { name: '新增子节点', command: 'add' },
@@ -110,7 +126,7 @@ const form = reactive({
     id:null,
     oid: 0,
     describe: '',
-    ipAddress: '',
+    oidXml: '',
 })
 
 const addFormRef = ref();
@@ -118,11 +134,11 @@ const addFormRef = ref();
 
 const onSubmit = ()=>{
     // sign为true时新增，为false时修改
-    console.log("form=",form)
+    // console.log("form=",form)
     if(sign){
         // 注册
         const res =  registerOID(JSON.stringify(form), fatherId)
-        console.log(res.data)
+        // console.log(res.data, "resData==============>???????????????")
         form.id = res.data
         operationNode.children.append(form.map(item=>({
             id:item.id,
@@ -171,39 +187,33 @@ onMounted(
         <el-container>
             <el-header>OID管理</el-header>
             <el-container>
-                <el-aside width="30%" >
-                    <el-form v-if="flag" ref="addFormRef" :model="form" label-width="auto" style="max-width: 600px">
-                        <el-form-item label="当前OID">
-                            <!--                <el-input v-model="form.number" autosize/>-->
-                            <el-input-number v-model="form.oid" :min="minValue" :max="2147483647" />
-                        </el-form-item>
-                        <el-form-item label="描述信息">
-                            <el-input v-model="form.describe" autosize/>
-                        </el-form-item>
-                        <el-form-item label="xml模板名">
-<!--                            <el-input v-model="form.ipAddress" autosize/>-->
-<!--                            <el-cascader v-model="value" :options="options" @change="handleChange" />-->
-                            <el-select v-model="selectValue" placeholder="Select" style="width: 240px">
-                                <el-option
-                                        v-for="item in options"
-                                        :key="item.value"
-                                        :label="item.label"
-                                        :value="item.value"
-                                />
-                            </el-select>
-                        </el-form-item>
-                        <el-form-item>
-                            <el-button type="primary" @click="onSubmit('form')">提交</el-button>
-                        </el-form-item>
-                    </el-form>
+<!--                <el-aside width="30%" >-->
+
 <!--                    <RouterLink to="/about">-->
 <!--                        <el-button type="primary">xml功能</el-button>-->
 <!--                    </RouterLink>-->
 <!--                    <RouterView></RouterView>-->
-                </el-aside>
+<!--                </el-aside>-->
                 <el-main>
+                  <div>
+                    <teleport to="body">
+                      <update-meanu
+                        ref="dailRef">
+                      </update-meanu>
+                    </teleport>
+
+                  </div>
+
 <!--                    <Tree v-model="data"/>-->
                     <div style="height: 1000px; background: antiquewhite">
+                        <teleport to="body">
+                          <show-o-i-d
+                            :data="syncProcess"
+                            ref="processDailogRef">
+                          </show-o-i-d>
+                        </teleport>
+
+
                         <vue3-tree-org
                                 :default-expand-keys="arr"
                                 :data="originOID"
@@ -218,6 +228,8 @@ onMounted(
                                 :define-menus="menus"
                                 :node-copy="query"
                                 :default-expand-level="true"
+                                @on-node-dblclick="showOIDContent"
+                                :click-delay="100"
                         />
                     </div>
                 </el-main>

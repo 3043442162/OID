@@ -135,6 +135,7 @@
                 <artifactId>hutool-all</artifactId>
                 <version>${hutool-all.version}</version>
             </dependency>
+
         </dependencies>
     </dependencyManagement>
 </project>

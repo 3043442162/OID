@@ -21,9 +21,9 @@ public class UserController {
 
     @CrossOrigin
 //    @Verify
-    @GetMapping("/login")
+    @PostMapping("/login")
     @ApiOperation("用户登录")
-    public Result<?> login(@Validated LoginForm loginForm){
+    public Result<?> login(@RequestBody LoginForm loginForm){
         return userService.login(loginForm);
     }
 

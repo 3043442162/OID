@@ -6,6 +6,11 @@ spring:
     url: jdbc:mysql://hadoop103:3306/oid?characterEncoding=utf-8&useSSL=false
     username: root
     password: '000000'
+  data:
+    neo4j:
+      uri: bolt://hadoop100:7687
+      username: neo4j
+      password: 123456
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
@@ -49,3 +54,5 @@ minio:
   secret-key: minio123
   end-point: http://192.168.10.130:9000
   bucket-name: oid
+store:
+  dir: "D:\\task\\OID\\xml\\"

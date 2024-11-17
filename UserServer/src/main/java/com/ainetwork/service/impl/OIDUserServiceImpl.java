@@ -1,5 +1,6 @@
 package com.ainetwork.service.impl;
 
+import cn.dev33.satoken.stp.SaTokenInfo;
 import cn.dev33.satoken.stp.StpUtil;
 import com.ainetwork.dto.LoginForm;
 import com.ainetwork.entity.OIDUser;
@@ -12,6 +13,8 @@ import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -33,8 +36,13 @@ public class OIDUserServiceImpl extends ServiceImpl<OIDUserMapper, OIDUser> impl
         if(!BCrypt.checkpw(loginForm.getPassword(), oidUser.getPassword()))
             return Result.error("密码错误");
 
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", oidUser.getId());
         StpUtil.login(oidUser.getId());
-        return Result.ok();
+
+        SaTokenInfo tokenInfo = StpUtil.getTokenInfo();
+        map.put(tokenInfo.getTokenName(), tokenInfo.tokenValue);
+        return Result.ok(map);
     }
 
     @Override

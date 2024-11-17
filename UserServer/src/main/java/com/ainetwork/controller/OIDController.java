@@ -17,6 +17,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -263,6 +264,7 @@ public class OIDController {
     @PostMapping("/update")
     public Result<?> updateOID(@RequestBody OID oid){
         stpInterface.setNodeId(oid.getId());
+        int loginIdAsInt = StpUtil.getLoginIdAsInt();
         StpUtil.checkPermission(PermissionEnum.UPDATE_NODE.getDesc());
         if(!Optional.ofNullable(oid.getId()).isPresent()){
             return Result.error("id不能为null");
@@ -298,8 +300,9 @@ public class OIDController {
     @GetMapping("/queryMaxOID")
     public Result<?> queryMaxOID(Integer id){
         Integer fatherIDs = oidRelationService.maxOID(id);
-        if(fatherIDs == null) return Result.ok(0);
+        if(fatherIDs == null) return Result.ok(1);
         OID byId = oidService.getById(fatherIDs);
+
         return Result.ok(byId.getOid());
     }
 
@@ -321,6 +324,10 @@ public class OIDController {
                 sons) {
             OID sonOID = oidService.getById(oidId);
             max = max > sonOID.getOid()?max:sonOID.getOid();
+        }
+        // 如果已经为父节点
+        if(sons.isEmpty()){
+            return Result.ok(oidService.getById(id).getOid());
         }
         return Result.ok(max);
     }
@@ -370,5 +377,46 @@ public class OIDController {
                 }
             }
         }
+    }
+
+    @Value("${store.dir}")
+    private String storeDir;
+    /**
+     * 返回oid 完整信息，包括所有oid前缀和具体xml文件字符串
+     */
+    @GetMapping("/query/oid/information")
+    public Result queryOidInformation(Integer id) throws IOException {
+        Map<String, Object> map = new HashMap<>();
+        OID oid = oidService.getById(id);
+        OIDXml oidXml = oidXmlService.getById(oid.getOidXml());
+
+        StringBuilder builder = new StringBuilder();
+
+        List<Integer> fatherIDs = oidRelationService.queryOidAllFathter(id);
+        if (fatherIDs == null || fatherIDs.size() == 0)
+        {   builder.append(oid.getOid()); }
+        else {
+            for (Integer in : fatherIDs
+            ) {
+                OID byId = oidService.getById(in);
+                builder.append(byId.getOid()).append(".");
+            }
+            builder.append(oid.getOid());
+        }
+        String string = builder.toString();
+        map.put("preOID", string);
+        map.put("describe", oid.getDescribe());
+        if(oidXml.getOidUserId() != StpUtil.getLoginIdAsInt()) return Result.error("没有权限访问该oid");
+        map.put("xmlName", oidXml.getXmlName());
+        FileInputStream stream = new FileInputStream(storeDir+oidXml.getXmlUrl());
+        byte buff[] = new byte[1024];
+        int length = stream.read(buff);
+        StringBuilder builder1 = new StringBuilder();
+        while(length > 0) {
+            builder1.append(new String(buff,0,length));
+            length = stream.read(buff);
+        }
+        map.put("xmlContent", builder1.toString());
+        return Result.ok(map);
     }
 }

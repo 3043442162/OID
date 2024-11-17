@@ -7,17 +7,14 @@ import com.ainetwork.service.OIDXmlService;
 import com.ainetwork.util.Result;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import io.minio.MinioClient;
-import io.minio.ObjectWriteResponse;
-import io.minio.PutObjectArgs;
-import io.minio.UploadObjectArgs;
-import org.apache.commons.lang3.StringUtils;
+
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.XMLWriter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -45,14 +42,15 @@ public class OIDXmlServiceImpl extends ServiceImpl<OIDXmlMapper, OIDXml> impleme
 //        oidXmlLambdaQueryWrapper.select(OIDXml::getXmlUrl);
         return  baseMapper.selectList(oidXmlLambdaQueryWrapper);
     }
-
+@Value("${store.dir}")
+private String fileStore;
     @Override
     public boolean deleteXMLFileFromUserIdAndFileLink(Integer userId, Integer xmlId) {
         OIDXml byId = getById(xmlId);
         if (!userId.equals(byId.getOidUserId())){
             return false;
         }
-        File file = new File("D:\\task\\OID\\xml\\" + byId.getXmlUrl());
+        File file = new File(fileStore + byId.getXmlUrl());
 
         if(file.delete()){
             removeById(xmlId);
@@ -111,7 +109,7 @@ public class OIDXmlServiceImpl extends ServiceImpl<OIDXmlMapper, OIDXml> impleme
 
 //            System.out.println(oid);
 //            OIDXml oidXml = new OIDXml();
-            File file = new File("D:\\task\\OID\\xml\\"+url);
+            File file = new File(fileStore+url);
             FileOutputStream fileOutputStream = new FileOutputStream(file);
             fileOutputStream.write(document.asXML().getBytes(StandardCharsets.UTF_8));
             fileOutputStream.flush();
@@ -125,6 +123,8 @@ public class OIDXmlServiceImpl extends ServiceImpl<OIDXmlMapper, OIDXml> impleme
         }
     }
 
+    @Value("${store.dir}")
+    private String storeDir;
     /**
      * 根据id返回xml文件
      * @param id
@@ -135,7 +135,7 @@ public class OIDXmlServiceImpl extends ServiceImpl<OIDXmlMapper, OIDXml> impleme
 
         OIDXml oidXml = getById(id);
         String url = oidXml.getXmlUrl();
-        File file = new File("D:\\task\\OID\\xml\\"+url);
+        File file = new File(storeDir+url);
         return file;
     }
 }

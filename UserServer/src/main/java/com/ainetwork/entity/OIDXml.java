@@ -15,5 +15,5 @@ public class OIDXml {
     private String xmlUrl;
     // 给用户看的
     private String xmlName;
-    private int oidUserId;
+    private Integer oidUserId;
 }
