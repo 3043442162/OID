@@ -21,11 +21,14 @@ export function queryOIDMax(id){
     )
 }
 export function registerOID(node,fatherId){
+    console.log(node)
+    console.log(fatherId)
     return http.post(
         "/OID/register?fatherId="+fatherId,
         node,{
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin':'*'
             }}
     )
 }

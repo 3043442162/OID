@@ -1,5 +1,5 @@
 <script setup>
-import {ref} from "vue";
+import {defineEmits, ref} from "vue";
 import {uploadXml,getXmlList} from "@/apis/OID";
 
 
@@ -14,19 +14,24 @@ const onChangeVisable = ()=>{
 }
 const formInline = ref([temp])
 // const fileName=ref()
+const emit = defineEmits(['closeComponent']);
 const onSubmit = () => {
   console.log(formInline.value)
   uploadXml(formInline.value, input.value)
   getXmlList()
   input.value = null
   formInline.value = []
-  dialogFormVisible.value = true
+  emit('closeComponent', "success call");
+  dialogFormVisible.value = false
   // console.log(formInline.value)
 }
+
+
 const addForm = ()=>{
   formInline.value.push({key:"", value:""})
 }
 defineExpose({ onChangeVisable });
+
 </script>
 
 <template>

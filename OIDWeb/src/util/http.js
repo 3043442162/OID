@@ -1,9 +1,9 @@
 import axios from 'axios'
 const http = axios.create(
     {
-        baseURL: 'http://localhost:80',
+        baseURL: 'http://aien-china.com/api',
         timeout: 10000,
-        headers : {"satoken":localStorage.getItem("satoken")}
+        headers : {'satoken':localStorage.getItem("satoken")}
     }
 )
 

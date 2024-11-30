@@ -2,7 +2,7 @@
   <el-dialog
       v-model="flag"
       :close-on-click-modal="false"
-      title="updateOID"
+      title="operation OID"
   >
     <el-form v-if="flag" ref="addFormRef" :model="form" label-width="auto" style="max-width: 600px">
       <el-form-item label="当前OID">
@@ -55,13 +55,14 @@ const options = ref([
     const onSubmit = ()=>{
       // 如果sign为真，则是新增，否则是修改
       if(sssssss.value) {
-        registerOID(JSON.stringify(form), fatherId)
+
+        registerOID(JSON.stringify(form), fatherId.value)
       }else{
-        form.value.id = nodeId.value
+        form.id = nodeId.value
         updateOID(JSON.stringify(form))
       }
       // console.log(res.data, "resData==============>???????????????")
-
+      flag.value = false
     }
     let selectXml = (data) =>{
       // console.log(data + "data--------------------------")

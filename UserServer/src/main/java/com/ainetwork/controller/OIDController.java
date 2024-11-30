@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 @Transactional
 @RestController
 @RequestMapping("/OID")
+@CrossOrigin
 @Api(tags = "OID管理模块")
 public class OIDController {
 
@@ -70,9 +71,10 @@ public class OIDController {
     /**
      * oid注册
      */
+    @CrossOrigin
     @ApiOperation("在父节点下注册子节点oid")
     @PostMapping("/register")
-    public Result<?> register(@Validated  @RequestBody OID oid, Integer fatherId){
+    public Result<?> register(@RequestBody OID oid, Integer fatherId){
         stpInterface.setNodeId(fatherId);
         StpUtil.checkPermission(PermissionEnum.UPDATE_NODE.getDesc());
         OID byId = oidService.getById(fatherId);

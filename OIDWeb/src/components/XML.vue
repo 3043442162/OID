@@ -1,11 +1,12 @@
 <script setup>
-    import {ref, onMounted} from 'vue'
+import {ref, onMounted, reactive} from 'vue'
     import {getXmlList,deleteXml} from '@/apis/OID'
     import xmlOption from './XmlOptions.vue'
+const onReload = ref(true)
 
     const processDailogRef = ref()
-    const tableData = ref([])
-
+const key = ref(0)
+    const tableData = reactive({data:[]})
     const checkDetail =async (line)=>{
         const res = await deleteXml(line)
         console.log(res)
@@ -15,9 +16,10 @@
     }
     const updateXmlList =          async () =>{
         const res = await getXmlList()
-        console.log(res.data)
-        tableData.value = res.data
-        console.log(tableData.value)
+        // console.log(res.data)
+        tableData.data = res.data
+        onReload.value = true
+        console.log("==================>",tableData.data)
     }
     const view = (id)=>{
       processDailogRef.value.onChangeVisable(id);
@@ -25,14 +27,19 @@
     const c1 = () => {
       processDailogRef.value.onChangeVisable()
     };
-
+    const refreshData = (message)=>{
+      console.log(message)
+      onReload.value = false
+      updateXmlList()
+      // location. reload()
+    }
     onMounted( () => {
         updateXmlList()
     })
 </script>
 <template>
     <!-- 新增xml模板-->
-    <el-container>
+    <el-container v-if="onReload">
         <el-header>xml管理系统</el-header>
         <el-container>
 <!--            <el-aside width="200px">-->
@@ -44,7 +51,9 @@
               <teleport to="body">
                 <xmlOption
                     :data="syncProcess"
-                    ref="processDailogRef">
+                    ref="processDailogRef"
+                @close-component="refreshData"
+                >
                 </xmlOption>
               </teleport>
             </el-button>
@@ -57,14 +66,14 @@
 
 <!--                </xmlOption>-->
 <!--              </teleport>-->
-                <el-table :data="tableData" stripe style="width: 100%">
+                <el-table :data="tableData.data" stripe style="width: 100%" :key="key">
 <!--                    <el-table-column prop="date" label="Date" width="180" />-->
 <!--                    <el-table-column prop="name" label="Name" width="180" />-->
                     <el-table-column prop="xmlName" label="xml模板名" />
                     <el-table-column label="操作" align="center" min-width="100">
                         <template v-slot="scope">
-                            <el-button type="text" @click="checkDetail(scope.row.id)">删除xml</el-button>
-                          　<el-button type="text" @click="view(scope.row.id)">查看xml</el-button>
+                            <el-button  @click="checkDetail(scope.row.id)">删除xml</el-button>
+                          　<el-button  @click="view(scope.row.id)">查看xml</el-button>
                         </template>
                     </el-table-column>
                 </el-table>

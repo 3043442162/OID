@@ -10,7 +10,7 @@
         </el-header>
         <el-main>
 <!--          <RouterView />-->
-          <tree v-if="flag"/>
+          <tree v-if="flag" />
           <xml v-if="!flag"/>
         </el-main>
       </el-container>
@@ -25,6 +25,8 @@ const flag = ref(true)
 const setFlag = ()=>{
   flag.value = !flag.value
 }
+const xmlKey = ref(0)
+const treeKey = ref(0)
 // const flag = ref("/tree")
 
 // const changeToTree = ()=>{

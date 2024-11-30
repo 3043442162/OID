@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Api(tags = "用户管理模块")
 @RestController
+@CrossOrigin
 @RequestMapping("/user")
 public class UserController {
 

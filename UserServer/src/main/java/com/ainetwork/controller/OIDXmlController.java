@@ -29,6 +29,8 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+
+@CrossOrigin
 @RestController()
 @RequestMapping("/oidXml")
 @Api(tags = "oid Xml管理")
@@ -63,6 +65,7 @@ public class OIDXmlController {
     @GetMapping("/queryXml")
     @ApiOperation("查询用户所拥有的oidxml模板链接")
     public Result<?> queryUserOID(HttpServletRequest httpServletRequest){
+        String satoken = httpServletRequest.getHeader("satoken");
         Integer userId = StpUtil.getLoginIdAsInt();
 //        int userId = StpUtil.getLoginIdAsInt();
         List<OIDXml> modelLinks = oidXmlService.queryUserXml(userId);

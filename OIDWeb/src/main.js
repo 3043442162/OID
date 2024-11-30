@@ -5,14 +5,14 @@ import "vue3-tree-org/lib/vue3-tree-org.css";
 import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
 
-import { createMemoryHistory, createRouter } from 'vue-router'
+import { createRouter, createWebHashHistory} from 'vue-router'
 
 import TreeView from './components/Tree.vue'
 import XmlView from './components/XML.vue'
 import Login from './components/login.vue'
 import Menu from './components/Menu.vue'
 const routes = [
-    {path:'/',redirect:'/login'},
+    {path:'/',redirect : '/menu', component:Menu},
     { path: '/tree', component: TreeView },
     { path: '/xml', component: XmlView },
     {path: '/login', component: Login},
@@ -20,17 +20,18 @@ const routes = [
 ]
 
 const router = createRouter({
-    history: createMemoryHistory(),
+    history: createWebHashHistory(),
     routes,
 })
 router.beforeEach((to, from, next) => {
     // 判断有没有登录
     if (!localStorage.getItem('satoken')) {
-        console.log("success log")
-        if (to.name === "/login") {
+        // console.log("success log",to)
+        if (to.path === "/login") {
             next();
         } else {
-            router.push('/login')
+            // router.push('/login')
+            next({path:'/login'});
         }
     } else {
         next();
