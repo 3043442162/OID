@@ -1,16 +1,16 @@
 server:
-  port: 8080
-
+  port: 8089
 spring:
-#  profiles:
-#    active: @profileActive@
-  profiles:
-    active: releaseProA
-#  datasource:
-#    driver-class-name: com.mysql.jdbc.Driver
-#    url: jdbc:mysql://localhost:3306/oid?characterEncoding=utf-8&useSSL=false
-#    username: root
-#    password: 'P*B_htq%q1ik'
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/oid_test?characterEncoding=utf-8&useSSL=false
+    username: root
+    password: 'P*B_htq%q1ik'
+  #  data:
+  #    neo4j:
+  #      uri: bolt://hadoop100:7687
+  #      username: neo4j
+  #      password: 123456
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
@@ -49,8 +49,5 @@ sa-token:
   token-style: uuid
   # 是否输出操作日志
   is-log: true
-minio:
-  access-key: k0fKkJ0zT35RntaQkPET
-  secret-key: 7A6F3kto7Abdx3zTyomMFLLG0yGoZH7cyDefvx2V
-  end-point: http://localhost:9000
-  bucket-name: cake-box
+store:
+  dir: "/task/test/xml//"
